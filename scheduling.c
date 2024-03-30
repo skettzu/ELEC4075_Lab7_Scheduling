@@ -27,8 +27,8 @@ To Do:
     - Parse input file and store process' name, arrival time, and service time to own struct [Done]
     - Get FCFS working [Done]
     - Get SPN working [Done]
-    - Get SRT working
-    - Get Table printing working
+    - Get SRT working [Testing]
+    - Get Table printing working [Testing]
     - Get Gantt Chart printing working
 */
 struct Process {
@@ -122,10 +122,12 @@ void SPN(struct Process *inp){
     Algorithm for Shortest Process Next
     */
    struct Process temp;
+
+   // Re-order processes to be FCFS
    for (int i = 0; i<5; i++){
     if(i!=4){
         for (int j = i+1; j<5; j++){
-            if (inp[i].serv_time > inp[j].serv_time){
+            if (inp[i].start_time > inp[j].start_time){
                 temp = inp[i];
                 inp[i] = inp[j];
                 inp[j] = temp;
@@ -133,25 +135,46 @@ void SPN(struct Process *inp){
         }
     }
    }
-   int temp_time;
+   int temp_time = 0;
+   int ran_processes = 0;
+   int flags[4] = {0,0,0,0};
+   int temp_shortest = 1000;
+   int temp_shortest_ind;
+   // run first process
+   inp[0].start_time = inp[0].arr_time;
+   inp[0].fin_time = inp[0].start_time + inp[0].serv_time;
+   inp[0].wait_time = inp[0].start_time - inp[0].arr_time;
+   inp[0].turn_time = inp[0].fin_time - inp[0].arr_time;
+   temp_time = inp[0].fin_time;
+   printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[0].name, inp[0].arr_time, inp[0].serv_time, inp[0].start_time, inp[0].fin_time, inp[0].wait_time, inp[0].turn_time);   
+   ran_processes = ran_processes+1;
    // Fill in rest of processes infomation
-   for (int i = 0; i<5; i++){
-        if(i==0){
-            inp[0].start_time = inp[0].arr_time;
-            inp[0].fin_time = inp[0].start_time + inp[0].serv_time;
-            inp[0].wait_time = inp[0].start_time - inp[0].arr_time;
-            inp[0].turn_time = inp[0].fin_time - inp[0].arr_time;
-            temp_time = inp[0].fin_time;
-            printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[i].name, inp[i].arr_time, inp[i].serv_time, inp[i].start_time, inp[i].fin_time, inp[i].wait_time, inp[i].turn_time);   
-            continue;
+   while(ran_processes != 5){
+        for(int i = 1; i < 5; i++){
+            // check if ran
+            if (flags[i-1]==1)
+            {
+                continue;
+            }
+            // check if arrived
+            if(inp[i].arr_time<=temp_time){
+                // keep track of shortest process time and index
+                if (temp_shortest>inp[i].serv_time){
+                    temp_shortest = inp[i].serv_time;
+                    temp_shortest_ind = i;
+                }
+            }
         }
-        inp[i].start_time = temp_time;
-        inp[i].fin_time = inp[i].start_time + inp[i].serv_time;
-        inp[i].wait_time = inp[i].start_time - inp[i].arr_time;
-        inp[i].turn_time = inp[i].fin_time - inp[i].arr_time;
-        temp_time = inp[i].fin_time;
-
-        printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[i].name, inp[i].arr_time, inp[i].serv_time, inp[i].start_time, inp[i].fin_time, inp[i].wait_time, inp[i].turn_time);   
+           // run process
+           inp[temp_shortest_ind].start_time = temp_time;
+           inp[temp_shortest_ind].fin_time = inp[temp_shortest_ind].start_time + inp[temp_shortest_ind].serv_time;
+           inp[temp_shortest_ind].wait_time = inp[temp_shortest_ind].start_time - inp[temp_shortest_ind].arr_time;
+           inp[temp_shortest_ind].turn_time = inp[temp_shortest_ind].fin_time - inp[temp_shortest_ind].arr_time;
+           temp_time = inp[temp_shortest_ind].fin_time;
+           printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[temp_shortest_ind].name, inp[temp_shortest_ind].arr_time, inp[temp_shortest_ind].serv_time, inp[temp_shortest_ind].start_time, inp[temp_shortest_ind].fin_time, inp[temp_shortest_ind].wait_time, inp[temp_shortest_ind].turn_time);   
+           ran_processes = ran_processes+1; // increment process ran counter
+           flags[temp_shortest_ind-1]=1;    // flag ran process
+           temp_shortest = 1000;            // reset shortest tracker
    }
    
 }
@@ -160,6 +183,58 @@ void SRT(struct Process *inp){
     /*
     Algorithm for Shortest-Remaining Time
     */
+
+    // Keep track of current time
+    int curr_time = 0;
+    int tot_time = 0;
+    int run_time[5] = {0,0,0,0,0};      // keep track of run time
+    int flags[5] = {0,0,0,0,0};         // keep track if process ran
+    int temp_serv_time[5] = {0,0,0,0,0};
+    int temp_shortest = 1000;           // keep track of shortest process
+    int temp_shortest_ind;              // keep track of shortest process index
+    // find total service time and copy serv_time
+    for(int i = 0; i < 5; i++){
+        tot_time = tot_time + inp[i].serv_time;
+        temp_serv_time[i] = inp[i].serv_time;
+        inp[i].start_time = -1; // flag stating it hasn't been initialized
+    }
+    while(curr_time<tot_time){
+        for(int i = 0; i < 5; i++){
+            // check if ran
+            if (flags[i]==1)
+            {
+                continue;
+            }
+            // check if arrived
+            if(inp[i].arr_time<=curr_time){
+                // keep track of shortest process time and index
+                if (temp_shortest>temp_serv_time[i]){
+                    temp_shortest = temp_serv_time[i];
+                    temp_shortest_ind = i;
+                }
+            }
+        }
+        // run process for 1 time unit
+        temp_serv_time[temp_shortest_ind] = temp_serv_time[temp_shortest_ind] - 1;
+        // check if started before
+        if (inp[temp_shortest_ind].start_time == -1){
+            inp[temp_shortest_ind].start_time = curr_time;
+        }
+        //printf("%d", inp[temp_shortest_ind].start_time);
+        //return;
+        // check if finished running
+        if (temp_serv_time[temp_shortest_ind] == 0){
+            inp[temp_shortest_ind].fin_time = curr_time;
+            flags[temp_shortest_ind] = 1;
+            inp[temp_shortest_ind].wait_time = inp[temp_shortest_ind].start_time - inp[temp_shortest_ind].arr_time;
+            inp[temp_shortest_ind].turn_time = inp[temp_shortest_ind].fin_time - inp[temp_shortest_ind].arr_time;
+            printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[temp_shortest_ind].name, inp[temp_shortest_ind].arr_time, inp[temp_shortest_ind].serv_time, inp[temp_shortest_ind].start_time, inp[temp_shortest_ind].fin_time, inp[temp_shortest_ind].wait_time, inp[temp_shortest_ind].turn_time);   
+        }
+        // reset shortest time tracker
+        temp_shortest = 1000;
+        // update curr_time
+        curr_time = curr_time + 1;
+    }
 }
 int main() {
     struct Process inp[5];
@@ -167,7 +242,8 @@ int main() {
     parser(inp);
     printf("Process     Arrival Time     Service Time       Start Time      Finish Time     Wait Time       Turnaround Time\n");
     //FCFS(inp);
-    SPN(inp);
+    //SPN(inp);
+    SRT(inp);
     //printf("%s\n", inp[0].name);
     //printf("%d\n", inp[0].arr_time);
     //printf("%d\n", inp[0].serv_time);
