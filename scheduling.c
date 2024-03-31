@@ -3,33 +3,15 @@
 #include <string.h>
 
 /*
-Run your simulator for following inputs
-Part 1:
-                                                                                    (start - arr)   (finish - arr)
-    Process     Arrival Time     Service Time       Start Time      Finish Time     Wait Time       Turnaround Time
-    A           0                3                  *               *               *               *
-    B           2                6                  *               *               *               *
-    C           4                4                  *               *               *               *
-    D           6                5                  *               *               *               *
-    E           8                2                  *               *               *               *
-
-Part 2:
-   Process     Arrival Time     Service Time       Start Time      Finish Time     Wait Time       Turnaround Time
-    A           0                8                  *               *               *               *
-    B           1                5                  *               *               *               *
-    C           2                9                  *               *               *               *
-    D           3                2                  *               *               *               *
-    E           4                6                  *               *               *               *
-*/
-
-/*
-To Do:
-    - Parse input file and store process' name, arrival time, and service time to own struct [Done]
-    - Get FCFS working [Done]
-    - Get SPN working [Done]
-    - Get SRT working [Done]
-    - Get Table printing working [Done]
-    - Get Gantt Chart printing working
+    Instructions:
+    Change the input file to the desired one using variable fp1 in parser
+    Output desired algorithm with corresponding visual representation by uncommenting the code in main()
+    
+    Assumptions:
+    The input file contains 5 processes
+    There is a max total service time of 30 time units
+    The first process starts at time 0
+    No processes have the same start time
 */
 
 struct Process {
@@ -51,7 +33,7 @@ void parser(struct Process *inp) {
     char str[20];
     int temp;
     int process_ind = 0;
-    fp1 = fopen("part1.txt", "r"); 
+    fp1 = fopen("part2.txt", "r"); 
     while (fgets(str, sizeof(str), fp1) != NULL)
 	{
 		lineP = 0;
@@ -260,7 +242,7 @@ void SRT(struct Process *inp, char* gantt){
 
 void gantt(struct Process *inp, char *gantt){
     printf("Gantt Chart: \n");
-    
+    // Goes through gantt array and prints the visual presentation
     for(int i = 0; i<5; i++){
         for(int j = 0; j<30; j++){
             switch (i){
@@ -316,6 +298,7 @@ int main() {
     // parse input file and store input to process struct
     parser(inp);
     printf("Process     Arrival Time     Service Time       Start Time      Finish Time     Wait Time       Turnaround Time\n");
+    
     
     // Runs FCFS algorithm and prints the corresponding data table and gantt chart
     char gantt_fcfs[30];
