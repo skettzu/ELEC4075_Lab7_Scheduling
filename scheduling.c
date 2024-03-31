@@ -27,10 +27,11 @@ To Do:
     - Parse input file and store process' name, arrival time, and service time to own struct [Done]
     - Get FCFS working [Done]
     - Get SPN working [Done]
-    - Get SRT working [Testing]
-    - Get Table printing working [Testing]
+    - Get SRT working [Done]
+    - Get Table printing working [Done]
     - Get Gantt Chart printing working
 */
+
 struct Process {
     // struct for each process
     char name[2];
@@ -40,6 +41,7 @@ struct Process {
     int fin_time;
     int wait_time;
     int turn_time;
+    int resume_time[10];
 };
 
 void parser(struct Process *inp) {
@@ -77,7 +79,7 @@ void parser(struct Process *inp) {
     }
 }
 
-void FCFS(struct Process *inp){
+void FCFS(struct Process *inp, char* gantt){
     /*
     Algorithm for First Come First Serve
     */
@@ -104,20 +106,29 @@ void FCFS(struct Process *inp){
             inp[0].wait_time = inp[0].start_time - inp[0].arr_time;
             inp[0].turn_time = inp[0].fin_time - inp[0].arr_time;
             temp_time = inp[0].fin_time;
+            // print process data
             printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[i].name, inp[i].arr_time, inp[i].serv_time, inp[i].start_time, inp[i].fin_time, inp[i].wait_time, inp[i].turn_time);   
+            // update gantt array
+            for(int j=0; j<inp[0].fin_time; j++){
+                gantt[j] = inp[0].name[0];
+            }
             continue;
         }
         inp[i].start_time = temp_time;
         inp[i].fin_time = inp[i].start_time + inp[i].serv_time;
         inp[i].wait_time = inp[i].start_time - inp[i].arr_time;
         inp[i].turn_time = inp[i].fin_time - inp[i].arr_time;
+
+        for(int j=temp_time; j<inp[i].fin_time; j++){
+                gantt[j] = inp[i].name[0];
+        }
         temp_time = inp[i].fin_time;
 
         printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[i].name, inp[i].arr_time, inp[i].serv_time, inp[i].start_time, inp[i].fin_time, inp[i].wait_time, inp[i].turn_time);   
    }
 }
 
-void SPN(struct Process *inp){
+void SPN(struct Process *inp, char* gantt){
     /*
     Algorithm for Shortest Process Next
     */
@@ -146,9 +157,12 @@ void SPN(struct Process *inp){
    inp[0].wait_time = inp[0].start_time - inp[0].arr_time;
    inp[0].turn_time = inp[0].fin_time - inp[0].arr_time;
    temp_time = inp[0].fin_time;
+   for(int i=0; i<inp[0].fin_time; i++){
+       gantt[i] = inp[0].name[0];
+    }
    printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[0].name, inp[0].arr_time, inp[0].serv_time, inp[0].start_time, inp[0].fin_time, inp[0].wait_time, inp[0].turn_time);   
    ran_processes = ran_processes+1;
-   // Fill in rest of processes infomation
+   // Fill in rest of processes information
    while(ran_processes != 5){
         for(int i = 1; i < 5; i++){
             // check if ran
@@ -170,8 +184,12 @@ void SPN(struct Process *inp){
            inp[temp_shortest_ind].fin_time = inp[temp_shortest_ind].start_time + inp[temp_shortest_ind].serv_time;
            inp[temp_shortest_ind].wait_time = inp[temp_shortest_ind].start_time - inp[temp_shortest_ind].arr_time;
            inp[temp_shortest_ind].turn_time = inp[temp_shortest_ind].fin_time - inp[temp_shortest_ind].arr_time;
+           for(int i=temp_time; i<inp[temp_shortest_ind].fin_time; i++){
+                gantt[i] = inp[temp_shortest_ind].name[0];
+           }
            temp_time = inp[temp_shortest_ind].fin_time;
            printf("%s           %d                %d                  %d               %d               %d               %d\n", inp[temp_shortest_ind].name, inp[temp_shortest_ind].arr_time, inp[temp_shortest_ind].serv_time, inp[temp_shortest_ind].start_time, inp[temp_shortest_ind].fin_time, inp[temp_shortest_ind].wait_time, inp[temp_shortest_ind].turn_time);   
+           
            ran_processes = ran_processes+1; // increment process ran counter
            flags[temp_shortest_ind-1]=1;    // flag ran process
            temp_shortest = 1000;            // reset shortest tracker
@@ -179,7 +197,7 @@ void SPN(struct Process *inp){
    
 }
 
-void SRT(struct Process *inp){
+void SRT(struct Process *inp, char* gantt){
     /*
     Algorithm for Shortest-Remaining Time
     */
@@ -192,6 +210,7 @@ void SRT(struct Process *inp){
     int temp_serv_time[5] = {0,0,0,0,0};
     int temp_shortest = 1000;           // keep track of shortest process
     int temp_shortest_ind;              // keep track of shortest process index
+    int gantt_ind = 0;
     // find total service time and copy serv_time
     for(int i = 0; i < 5; i++){
         tot_time = tot_time + inp[i].serv_time;
@@ -220,8 +239,11 @@ void SRT(struct Process *inp){
         if (inp[temp_shortest_ind].start_time == -1){
             inp[temp_shortest_ind].start_time = curr_time;
         }
-        //printf("%d", inp[temp_shortest_ind].start_time);
-        //return;
+        // update gantt array / index
+        gantt[gantt_ind] = inp[temp_shortest_ind].name[0];
+        gantt_ind++;
+        // update curr_time
+        curr_time = curr_time + 1;
         // check if finished running
         if (temp_serv_time[temp_shortest_ind] == 0){
             inp[temp_shortest_ind].fin_time = curr_time;
@@ -232,21 +254,88 @@ void SRT(struct Process *inp){
         }
         // reset shortest time tracker
         temp_shortest = 1000;
-        // update curr_time
-        curr_time = curr_time + 1;
+        
     }
 }
+
+void gantt(struct Process *inp, char *gantt){
+    printf("Gantt Chart: \n");
+    
+    for(int i = 0; i<5; i++){
+        for(int j = 0; j<30; j++){
+            switch (i){
+                case 0:
+                    if(gantt[j]=='A'){
+                        printf("A");
+                    }
+                    else{
+                        printf(" ");
+                    }
+                    break;
+                case 1:
+                    if(gantt[j]=='B'){
+                        printf("B");
+                    }
+                    else{
+                        printf(" ");
+                    }
+                    break;
+                case 2:
+                    if(gantt[j]=='C'){
+                        printf("C");
+                    }
+                    else{
+                        printf(" ");
+                    }
+                    break;
+                case 3:
+                    if(gantt[j]=='D'){
+                        printf("D");
+                    }
+                    else{
+                        printf(" ");
+                    }
+                    break;
+                case 4:
+                    if(gantt[j]=='E'){
+                        printf("E");
+                    }
+                    else{
+                        printf(" ");
+                    }
+                    break;
+            }
+        }
+        printf("\n");
+    }
+    
+}
+
 int main() {
     struct Process inp[5];
     // parse input file and store input to process struct
     parser(inp);
     printf("Process     Arrival Time     Service Time       Start Time      Finish Time     Wait Time       Turnaround Time\n");
-    //FCFS(inp);
-    //SPN(inp);
-    SRT(inp);
-    //printf("%s\n", inp[0].name);
-    //printf("%d\n", inp[0].arr_time);
-    //printf("%d\n", inp[0].serv_time);
     
+    // Runs FCFS algorithm and prints the corresponding data table and gantt chart
+    char gantt_fcfs[30];
+    FCFS(inp, gantt_fcfs);
+    gantt(inp, gantt_fcfs);
+    
+
+    /*
+    // Runs SPN algorithm and prints the corresponding data table and gantt chart
+    char gantt_spn[30];
+    SPN(inp, gantt_spn);
+    gantt(inp, gantt_spn);
+    */
+
+    /*
+    // Runs SRT algorithm and prints the corresponding data table and gantt chart
+    char gantt_srt[30];
+    SRT(inp, gantt_srt);
+    gantt(inp,gantt_srt);
+    */
+
     return 0;
 }
